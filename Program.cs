@@ -69,7 +69,7 @@ class Program
         {
             Console.WriteLine("Skipping file count. Scanning directly...");
         }
-
+        Stopwatch stopwatch = Stopwatch.StartNew();
         Parallel.ForEach(
             EnumerateFilesSafe(folder),
             new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
@@ -98,9 +98,6 @@ class Program
                     Console.WriteLine($"Scanned {currentScanned}: {file}");
             });
 
-        Console.WriteLine($"\nTotal files scanned: {scannedFiles}");
-        Console.WriteLine($"Total files found: {foundFiles.Count}");
-
         if (foundFiles.Count > 0)
         {
             Console.WriteLine("\nFound files:");
@@ -113,6 +110,11 @@ class Program
         {
             Console.WriteLine("\nNo files found containing the search term.");
         }
+
+        stopwatch.Stop();
+        Console.WriteLine($"Execution Time: {stopwatch.ElapsedMilliseconds} ms");
+        Console.WriteLine($"\nTotal files scanned: {scannedFiles}");
+        Console.WriteLine($"Total files found: {foundFiles.Count}");
 
         Console.WriteLine("Press Enter to exit...");
         Console.ReadLine();
