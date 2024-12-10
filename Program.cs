@@ -98,19 +98,6 @@ class Program
                     Console.WriteLine($"Scanned {currentScanned}: {file}");
             });
 
-        if (foundFiles.Count > 0)
-        {
-            Console.WriteLine("\nFound files:");
-            foreach (string foundFile in foundFiles)
-            {
-                Console.WriteLine(foundFile);
-            }
-        }
-        else
-        {
-            Console.WriteLine("\nNo files found containing the search term.");
-        }
-
         stopwatch.Stop();
         Console.WriteLine($"Execution Time: {stopwatch.ElapsedMilliseconds} ms");
         Console.WriteLine($"\nTotal files scanned: {scannedFiles}");
