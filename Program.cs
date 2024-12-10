@@ -1,6 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Text;
+﻿using System.Text;
 using System.Diagnostics;
 using System.Collections.Concurrent;
 
@@ -8,36 +6,48 @@ class Program
 {
     static void Main()
     {
-        Console.Write("Enter the folder to search: ");
-        string? folderToSearch = Console.ReadLine()?.Trim();
+        string folderToSearch = GetInput("Enter the folder to search: ", Directory.GetCurrentDirectory());
 
-        Console.Write("Enter the string to search for: ");
-        string? searchTerm = Console.ReadLine()?.Trim();
+        while (!Directory.Exists(folderToSearch))
+        {
+            Console.WriteLine("Invalid folder path. Please try again.");
+            folderToSearch = GetInput("Enter the folder to search: ", Directory.GetCurrentDirectory());
+        }
+        
+        string searchTerm = GetInput("Enter the string to search: ", "Hello World!");
 
-        Console.Write("Count files before scanning? (yes/no): ");
-        string? countFilesInput = Console.ReadLine()?.Trim().ToLower();
-        bool countFiles = string.IsNullOrEmpty(countFilesInput) || countFilesInput.StartsWith('y');
+        string caseSensitiveInput = GetInput("Case-sensitive search? (yes/no): ", "yes").ToLower();
+        bool isCaseSensitive = caseSensitiveInput.StartsWith('y');
 
-        Console.Write("Open location on found files? (yes/no): ");
-        string? openOnFoundInput = Console.ReadLine()?.Trim().ToLower();
-        bool openOnFound = string.IsNullOrEmpty(openOnFoundInput) || openOnFoundInput.StartsWith('y');
+        string countFilesInput = GetInput("Count files before scanning? (yes/no): ", "yes").ToLower();
+        bool countFiles = countFilesInput.StartsWith('y');
 
-        if (string.IsNullOrEmpty(folderToSearch) || !Directory.Exists(folderToSearch))
+        string openOnFoundInput = GetInput("Open location on found files? (yes/no): ", "no").ToLower();
+        bool openOnFound = openOnFoundInput.StartsWith('y');
+
+        if (!Directory.Exists(folderToSearch))
         {
             Console.WriteLine("Invalid folder path. Please try again.");
             return;
         }
 
-        if (string.IsNullOrEmpty(searchTerm))
-        {
-            Console.WriteLine("Search term cannot be empty. Please try again.");
-            return;
-        }
-
-        SearchStringInFiles(folderToSearch, searchTerm, countFiles, openOnFound);
+        SearchStringInFiles(folderToSearch, searchTerm, countFiles, openOnFound, isCaseSensitive);
     }
 
-    static void SearchStringInFiles(string folder, string searchString, bool countFiles, bool openOnFound)
+    static string GetInput(string prompt, string defaultValue)
+    {
+        Console.Write(prompt);
+        string? input = Console.ReadLine()?.Trim();
+        if (string.IsNullOrEmpty(input))
+        {
+            input = defaultValue;
+            Console.SetCursorPosition(0, Console.CursorTop - 1);
+            Console.WriteLine(prompt + input);
+        }
+        return input;
+    }
+
+    static void SearchStringInFiles(string folder, string searchString, bool countFiles, bool openOnFound, bool isCaseSensitive)
     {
         ConcurrentBag<string> foundFiles = new();
         int scannedFiles = 0;
@@ -47,12 +57,12 @@ class Program
         {
             try
             {
-                totalFiles = Directory.EnumerateFiles(folder, "*.*", SearchOption.AllDirectories).Count();
+                totalFiles = EnumerateFilesSafe(folder).Count();
                 Console.WriteLine($"Total files to scan: {totalFiles}");
             }
-            catch (UnauthorizedAccessException)
+            catch (Exception e)
             {
-                Console.WriteLine("Skipping file count due to insufficient permissions.");
+                Console.WriteLine($"Error during file count: {e.Message}");
             }
         }
         else
@@ -67,7 +77,7 @@ class Program
             {
                 try
                 {
-                    if (IsUtf8File(file) && FileContainsString(file, searchString))
+                    if (IsUtf8File(file) && FileContainsString(file, searchString, isCaseSensitive))
                     {
                         foundFiles.Add(file);
                         if (openOnFound)
@@ -113,14 +123,14 @@ class Program
         Stack<string> dirs = new();
         List<string> files = new();
         dirs.Push(path);
-    
+
         while (dirs.Count > 0)
         {
             string currentDir = dirs.Pop();
             try
             {
                 files.AddRange(Directory.EnumerateFiles(currentDir));
-    
+
                 foreach (var subDir in Directory.EnumerateDirectories(currentDir))
                 {
                     dirs.Push(subDir);
@@ -131,12 +141,11 @@ class Program
                 Console.WriteLine($"Access denied to: {currentDir}");
             }
         }
-    
+
         return files;
     }
 
-
-    static bool FileContainsString(string filePath, string searchString)
+    static bool FileContainsString(string filePath, string searchString, bool isCaseSensitive)
     {
         try
         {
@@ -144,8 +153,16 @@ class Program
             string line;
             while ((line = reader.ReadLine()) != null)
             {
-                if (line.Contains(searchString, StringComparison.OrdinalIgnoreCase))
-                    return true;
+                if (isCaseSensitive)
+                {
+                    if (line.Contains(searchString, StringComparison.Ordinal))
+                        return true;
+                }
+                else
+                {
+                    if (line.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                }
             }
         }
         catch { }
