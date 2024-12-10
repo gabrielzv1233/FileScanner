@@ -1,13 +1,12 @@
-﻿using System;
-using System.IO;
-using System.Text;
+﻿using System.Text;
 using System.Diagnostics;
-using System.Collections.Concurrent;
 
 class Program
 {
     static void Main()
     {
+        Console.Write("Created by Gabrielzv1233\n");
+
         Console.Write("Enter the folder to search: ");
         string? folderToSearch = Console.ReadLine()?.Trim();
 
@@ -37,12 +36,14 @@ class Program
         SearchStringInFiles(folderToSearch, searchTerm, countFiles, openOnFound);
     }
 
+
     static void SearchStringInFiles(string folder, string searchString, bool countFiles, bool openOnFound)
     {
-        ConcurrentBag<string> foundFiles = new();
         int scannedFiles = 0;
-        int totalFiles = 0;
+        int foundFilesCount = 0;
+        List<string> foundFiles = new();
 
+        int? totalFiles = null;
         if (countFiles)
         {
             try
@@ -60,38 +61,39 @@ class Program
             Console.WriteLine("Skipping file count. Scanning directly...");
         }
 
-        Parallel.ForEach(
-            EnumerateFilesSafe(folder),
-            new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
-            file =>
-            {
-                try
-                {
-                    if (IsUtf8File(file) && FileContainsString(file, searchString))
-                    {
-                        foundFiles.Add(file);
-                        if (openOnFound)
-                        {
-                            Process.Start("explorer.exe", $"/select,\"{file}\"");
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine($"Error processing file {file}: {e.Message}");
-                }
+        foreach (var file in EnumerateFilesSafe(folder))
+        {
+            scannedFiles++;
 
-                int currentScanned = Interlocked.Increment(ref scannedFiles);
-                if (countFiles)
-                    Console.WriteLine($"Scanned {currentScanned}/{totalFiles}: {file}");
-                else
-                    Console.WriteLine($"Scanned {currentScanned}: {file}");
-            });
+            string status = "Not Found";
+
+            try
+            {
+                if (IsUtf8File(file) && FileContainsString(file, searchString))
+                {
+                    foundFiles.Add(file);
+                    foundFilesCount++;
+                    status = "Found";
+
+                    if (openOnFound)
+                        Process.Start("explorer.exe", $"/select,\"{file}\"");
+                }
+            }
+            catch (Exception e)
+            {
+                status = $"Error ({e.Message})";
+            }
+
+            if (totalFiles.HasValue)
+                Console.WriteLine($"Scanned {scannedFiles}/{totalFiles}: {file} | Status: {status}");
+            else
+                Console.WriteLine($"Scanned {scannedFiles}: {file} | Status: {status}");
+        }
 
         Console.WriteLine($"\nTotal files scanned: {scannedFiles}");
-        Console.WriteLine($"Total files found: {foundFiles.Count}");
+        Console.WriteLine($"Total files found: {foundFilesCount}");
 
-        if (foundFiles.Count > 0)
+        if (foundFilesCount > 0)
         {
             Console.WriteLine("\nFound files:");
             foreach (string foundFile in foundFiles)
@@ -113,14 +115,17 @@ class Program
         Stack<string> dirs = new();
         List<string> files = new();
         dirs.Push(path);
-    
+
         while (dirs.Count > 0)
         {
             string currentDir = dirs.Pop();
             try
             {
-                files.AddRange(Directory.EnumerateFiles(currentDir));
-    
+                foreach (var file in Directory.EnumerateFiles(currentDir))
+                {
+                    files.Add(file);
+                }
+
                 foreach (var subDir in Directory.EnumerateDirectories(currentDir))
                 {
                     dirs.Push(subDir);
@@ -131,11 +136,10 @@ class Program
                 Console.WriteLine($"Access denied to: {currentDir}");
             }
         }
-    
+
         return files;
     }
-
-
+    
     static bool FileContainsString(string filePath, string searchString)
     {
         try
@@ -148,7 +152,7 @@ class Program
                     return true;
             }
         }
-        catch { }
+        catch{}
         return false;
     }
 
