@@ -11,7 +11,7 @@
 ## Defaults:
 - Folder (First prompt): Executable directory
 - Text (Second prompt): Hello World
-- Yes/No (Third prompt): Yes
+- Yes/No (Third prompt): No
 - Yes/No (Fourth prompt): Yes
 - Yes/No (Fifth prompt): No
 
