@@ -16,7 +16,7 @@ class Program
         
         string searchTerm = GetInput("Enter the string to search: ", "Hello World!");
 
-        string caseSensitiveInput = GetInput("Case-sensitive search? (yes/no): ", "yes").ToLower();
+        string caseSensitiveInput = GetInput("Case-sensitive search? (yes/no): ", "no").ToLower();
         bool isCaseSensitive = caseSensitiveInput.StartsWith('y');
 
         string countFilesInput = GetInput("Count files before scanning? (yes/no): ", "yes").ToLower();

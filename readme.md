@@ -1,3 +1,6 @@
+# PLEASE READ
+### Software will trigger windows defender if not compiled yourself, this is due to it scanning through your files, especially at the speeds its supposed too
+---
 ## Options:
 - Folder (First prompt): Folder to scan (scans subfolders)
 - Text (Second prompt): Text to find in folder
