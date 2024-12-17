@@ -116,16 +116,13 @@ class Program
                     log.WriteLine(foundFile);
                 }
             }
+            
+            Console.WriteLine($"\nLogged found files at {Path.GetFullPath("found.log")}");
         }
         else
         {
             Console.WriteLine("\nNo files found containing the search term.");
-            using (StreamWriter writer = new StreamWriter("found.log", false))
-            {
-                writer.WriteLine("No files found containing the search term.");
-            }
-        }        
-        Console.WriteLine($"\nLogged found files at {Path.GetFullPath("found.log")}");
+        }
 
         Console.WriteLine($"\nTotal files scanned: {scannedFiles}");
         Console.WriteLine($"Total files found: {foundFiles.Count}");
